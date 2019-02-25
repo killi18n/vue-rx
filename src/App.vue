@@ -43,13 +43,34 @@ import {
 export default {
   domStreams: ["click$", "imageError$"],
   subscriptions: function() {
+    const myPromise = new Promise((resolve, reject) => {
+      console.log("INVOKED");
+
+      resolve(new Date());
+    });
+
+    from(myPromise).subscribe(value => console.log(value));
+    from(myPromise).subscribe(value => console.log(value));
+
+    setTimeout(() => {
+      from(myPromise).subscribe(value => console.log(value));
+      from(myPromise).subscribe(value => console.log(value));
+    }, 3000);
+
     const activeTab$ = this.$watchAsObservable("activeTab", {
       immediate: true
     }).pipe(pluck("newValue"));
 
     const createLoader$ = url => from(this.$http.get(url)).pipe(pluck("data"));
 
-    const people$ = createLoader$(`https://starwars.egghead.training/people`);
+    const cache = {};
+    const cachePerson = cache => url => {
+      return cache[url] ? cache[url] : (cache[url] = createLoader$(url));
+    };
+
+    const people$ = createLoader$(
+      `https://starwars.egghead.training/people`
+    ).pipe(map(people => people.slice(0, 7)));
 
     const interval$ = interval(1000);
     const timesTwo$ = interval$.pipe(map(i => i * 2));
@@ -70,7 +91,8 @@ export default {
     const luke$ = activeTab$.pipe(
       switchMap(id => combineLatest(people$, people => people[id].id)),
       map(id => `https://starwars.egghead.training/people/${id}`),
-      exhaustMap(createLoader$),
+      // exhaustMap(createLoader$),
+      switchMap(cachePerson(cache)),
       catchError(() =>
         createLoader$("https://starwars.egghead.training/people/1")
       ),
