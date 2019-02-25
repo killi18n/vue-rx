@@ -68,11 +68,7 @@ export default {
     // );
 
     const luke$ = activeTab$.pipe(
-      switchMap(id =>
-        combineLatest(people$, people => {
-          return people[id].id;
-        })
-      ),
+      switchMap(id => combineLatest(people$, people => people[id].id)),
       map(id => `https://starwars.egghead.training/people/${id}`),
       exhaustMap(createLoader$),
       catchError(() =>
