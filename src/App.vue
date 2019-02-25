@@ -36,7 +36,8 @@ import {
   catchError,
   share,
   startWith,
-  exhaustMap
+  exhaustMap,
+  switchMap
 } from "rxjs/operators";
 
 export default {
@@ -66,8 +67,12 @@ export default {
     //   share()
     // );
 
-    // tabId$.subscribe(value => console.log(value));
     const luke$ = activeTab$.pipe(
+      switchMap(id =>
+        combineLatest(people$, people => {
+          return people[id].id;
+        })
+      ),
       map(id => `https://starwars.egghead.training/people/${id}`),
       exhaustMap(createLoader$),
       catchError(() =>
