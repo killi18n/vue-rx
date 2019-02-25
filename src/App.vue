@@ -1,5 +1,9 @@
 <template>
   <section class="section">
+    {{activeTab$}}
+    <b-tabs v-model="activeTab">
+      <b-tab-item v-for="person of people$" :key="person.id" :label="person.name"></b-tab-item>
+    </b-tabs>
     <h1 class="title">{{message$}}</h1>
     <h1 class="title">{{timesTwo$}}</h1>
     <h1 class="title">{{timesThree$}}</h1>
@@ -23,7 +27,7 @@
 </template>
 
 <script>
-import { interval, of, from, merge } from "rxjs";
+import { interval, of, from, merge, combineLatest } from "rxjs";
 import {
   map,
   pluck,
@@ -38,14 +42,32 @@ import {
 export default {
   domStreams: ["click$", "imageError$"],
   subscriptions: function() {
+    const activeTab$ = this.$watchAsObservable("activeTab", {
+      immediate: true
+    }).pipe(pluck("newValue"));
+
+    const createLoader$ = url => from(this.$http.get(url)).pipe(pluck("data"));
+
+    const people$ = createLoader$(`https://starwars.egghead.training/people`);
+
     const interval$ = interval(1000);
     const timesTwo$ = interval$.pipe(map(i => i * 2));
     const timesThree$ = interval$.pipe(map(i => i * 3));
     const message$ = of("vue-rx lessons");
     const random$ = this.click$.pipe(map(() => Math.random()));
-    const createLoader$ = url => from(this.$http.get(url)).pipe(pluck("data"));
-    const luke$ = this.click$.pipe(
-      pluck("data"),
+
+    // const luke$ = this.click$.pipe(
+    //   pluck("data"),
+    //   map(id => `https://starwars.egghead.training/people/${id}`),
+    //   exhaustMap(createLoader$),
+    //   catchError(() =>
+    //     createLoader$("https://starwars.egghead.training/people/1")
+    //   ),
+    //   share()
+    // );
+
+    // tabId$.subscribe(value => console.log(value));
+    const luke$ = activeTab$.pipe(
       map(id => `https://starwars.egghead.training/people/${id}`),
       exhaustMap(createLoader$),
       catchError(() =>
@@ -83,12 +105,33 @@ export default {
       name$,
       image$,
       disabled$,
-      buttonText$
+      buttonText$,
+      activeTab$,
+      people$
     };
   },
   data: function() {
     return {
-      personNumber: 10
+      personNumber: 10,
+      activeTab: 0,
+      people: [
+        {
+          name: "Luke",
+          id: 1
+        },
+        {
+          name: "Darth",
+          id: 4
+        },
+        {
+          name: "Leia",
+          id: 5
+        },
+        {
+          name: "Yoda",
+          id: 20
+        }
+      ]
     };
   }
 };
