@@ -4,11 +4,21 @@
     <h1 class="title">{{timesTwo$}}</h1>
     <h1 class="title">{{timesThree$}}</h1>
     <h1 class="title">{{random$}}</h1>
+    <section class="flexSection">
+      <div v-bind:key="number" v-for="number in personNumber">
+        <button
+          class="button"
+          :disabled="disabled$"
+          v-stream:click="{subject: click$, data: number}"
+          style="margin-right: 1rem"
+        >{{buttonText$}}</button>
+      </div>
+    </section>
     <!-- <h1 class="title">{{person$}}</h1> -->
     <h1 class="title">{{luke$}}</h1>
     <h1 class="title">{{name$}}</h1>
+
     <img v-stream:error="imageError$" :src="image$" alt>
-    <button class="button" :disabled="disabled$" v-stream:click="click$">{{buttonText$}}</button>
   </section>
 </template>
 
@@ -35,7 +45,8 @@ export default {
     const random$ = this.click$.pipe(map(() => Math.random()));
     const createLoader$ = url => from(this.$http.get(url)).pipe(pluck("data"));
     const luke$ = this.click$.pipe(
-      mapTo(`https://starwars.egghead.training/people/2`),
+      pluck("data"),
+      map(id => `https://starwars.egghead.training/people/${id}`),
       exhaustMap(createLoader$),
       catchError(() =>
         createLoader$("https://starwars.egghead.training/people/1")
@@ -74,9 +85,17 @@ export default {
       disabled$,
       buttonText$
     };
+  },
+  data: function() {
+    return {
+      personNumber: 10
+    };
   }
 };
 </script>
 
 <style>
+.flexSection {
+  display: flex;
+}
 </style>
